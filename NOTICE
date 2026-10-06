@@ -1,0 +1,8 @@
+webgpu-node runs on native-dawn (https://github.com/monteslu/native-dawn),
+which builds Google's Dawn WebGPU implementation and its Node-API bindings.
+Dawn and its dependencies keep their own licenses; native-dawn's binary
+archives include them.
+
+@kmamal/sdl is an optional, separately distributed peer dependency. Its
+native window must outlive any attached WebGPU surface. destroy() and
+detachWindow() release the surface without taking ownership of the window.

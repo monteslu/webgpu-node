@@ -1,0 +1,68 @@
+{
+  "name": "webgpu-node",
+  "version": "0.1.0",
+  "description": "WebGPU for Node.js: navigator.gpu, a canvas and GPUCanvasContext, and SDL windows, on native-dawn",
+  "type": "module",
+  "main": "index.mjs",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs"
+    }
+  },
+  "files": [
+    "index.mjs",
+    "index.d.ts",
+    "lib",
+    "LICENSE",
+    "NOTICE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node scripts/test.mjs",
+    "test:window": "node test/window.mjs",
+    "test:types": "tsc -p test/tsconfig.json",
+    "test:package": "node scripts/test-package.mjs",
+    "example:compute": "node examples/compute.mjs",
+    "example:triangle": "node examples/triangle.mjs",
+    "example:window": "node examples/sdl-window.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monteslu/webgpu-node.git"
+  },
+  "author": "Luis Montes",
+  "license": "MIT",
+  "keywords": [
+    "webgpu",
+    "dawn",
+    "wgsl",
+    "gpu",
+    "compute",
+    "sdl",
+    "three.js",
+    "node"
+  ],
+  "dependencies": {
+    "@webgpu/types": "0.1.72",
+    "native-dawn": "^0.1.0"
+  },
+  "peerDependencies": {
+    "@kmamal/sdl": "^0.11.13"
+  },
+  "peerDependenciesMeta": {
+    "@kmamal/sdl": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@kmamal/sdl": "0.11.13",
+    "@types/node": "^22.0.0",
+    "three": "0.180.0",
+    "typescript": "^5.9.3"
+  }
+}

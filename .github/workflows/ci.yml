@@ -1,0 +1,62 @@
+name: Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.target }} / Node ${{ matrix.node }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [linux-x64, linux-arm64, darwin-x64, darwin-arm64, win32-x64, win32-arm64]
+        node: ['22', '24']
+        include:
+          - { target: linux-x64, os: ubuntu-22.04, flags: '["backend=vulkan"]', sdl: true }
+          - { target: linux-arm64, os: ubuntu-22.04-arm, flags: '["backend=vulkan"]', sdl: true }
+          - { target: darwin-x64, os: macos-15-intel, flags: '["backend=metal"]', sdl: true }
+          - { target: darwin-arm64, os: macos-15, flags: '["backend=metal"]', sdl: true }
+          - { target: win32-x64, os: windows-2022, flags: '["backend=d3d12"]', sdl: true }
+          # @kmamal/sdl publishes no Windows ARM64 build.
+          - { target: win32-arm64, os: windows-11-arm, flags: '["backend=d3d12"]', sdl: false }
+    runs-on: ${{ matrix.os }}
+    env:
+      WEBGPU_NODE_TEST_FLAGS: ${{ matrix.flags }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Linux packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libvulkan1 mesa-vulkan-drivers xvfb
+      - run: npm install --no-audit --no-fund --ignore-scripts
+      - name: native-dawn prebuilt binary
+        run: npm rebuild native-dawn
+      - name: SDL for the window test
+        if: matrix.sdl
+        run: npm rebuild @kmamal/sdl
+      - run: npm run test:types
+      - run: npm test
+      - name: Window test (Xvfb)
+        if: matrix.sdl && runner.os == 'Linux'
+        run: xvfb-run -a npm run test:window
+        env:
+          SDL_VIDEODRIVER: x11
+      - name: Window test
+        if: matrix.sdl && runner.os != 'Linux'
+        run: npm run test:window
+      - run: npm run test:package
