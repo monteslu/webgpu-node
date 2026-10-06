@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { createWebGPUContext, createCanvas, installGlobals, GPUBufferUsage, GPUMapMode, GPUTextureUsage, GPUValidationError } from '../index.mjs'
+import { createWebGPUContext, createCanvas, installGlobals, requestAnimationFrame, cancelAnimationFrame, GPUBufferUsage, GPUMapMode, GPUTextureUsage, GPUValidationError } from '../index.mjs'
 import { setup, flags, adapterOptions, compute, pixels, clear } from './helpers.mjs'
 
 test('compute dispatch, async pipeline, queue submission, and mapped readback', async () => {
@@ -119,4 +119,40 @@ test('render pipeline draws a triangle into an offscreen canvas', async () => {
     assert.deepEqual([...rgba.slice((32 * 64 + 32) * 4, (32 * 64 + 32) * 4 + 4)], [0, 0, 255, 255])
     assert.deepEqual([...rgba.slice(0, 4)], [0, 0, 0, 255])
   } finally { app.destroy() }
+})
+
+test('installGlobals adds animation frames and self only where missing, and restores them', async () => {
+  const { gpu, device } = await setup()
+  try {
+    const bare = {}
+    const restoreBare = installGlobals({ gpu, target: bare })
+    assert.equal(bare.requestAnimationFrame, requestAnimationFrame)
+    assert.equal(bare.cancelAnimationFrame, cancelAnimationFrame)
+    assert.equal(bare.self, bare)
+    restoreBare()
+    assert.deepEqual(Object.keys(bare), [])
+
+    const ownFrame = () => 0
+    const browserish = { requestAnimationFrame: ownFrame, self: 'existing' }
+    const restoreBrowserish = installGlobals({ gpu, target: browserish })
+    assert.equal(browserish.requestAnimationFrame, ownFrame)
+    assert.equal(browserish.self, 'existing')
+    restoreBrowserish()
+
+    const optedOut = {}
+    const restoreOptedOut = installGlobals({ gpu, target: optedOut, animationFrame: false })
+    assert.equal(optedOut.requestAnimationFrame, undefined)
+    assert.equal(optedOut.self, undefined)
+    restoreOptedOut()
+  } finally { device.destroy() }
+})
+
+test('requestAnimationFrame passes the frame time and cancelAnimationFrame stops it', async () => {
+  const start = performance.now()
+  const time = await new Promise(resolve => requestAnimationFrame(resolve))
+  assert.ok(time >= start && time <= performance.now())
+  let fired = false
+  cancelAnimationFrame(requestAnimationFrame(() => { fired = true }))
+  await new Promise(resolve => setTimeout(resolve, 50))
+  assert.equal(fired, false)
 })

@@ -188,5 +188,13 @@ export declare const globals: Readonly<{
   GPUUncapturedErrorEvent: typeof globalThis.GPUUncapturedErrorEvent
   WGSLLanguageFeatures: typeof WGSLLanguageFeatures
 }>
-/** Returns an idempotent function that restores the previous property descriptors. */
-export declare function installGlobals(options?: { gpu?: GPU; target?: object }): () => void
+/**
+ * Installs the WebGPU classes and constants plus `navigator.gpu`. Unless
+ * `animationFrame` is false it also adds `requestAnimationFrame`,
+ * `cancelAnimationFrame` and `self` where the target lacks them. Returns an
+ * idempotent function that restores the previous property descriptors.
+ */
+export declare function installGlobals(options?: { gpu?: GPU; target?: object; animationFrame?: boolean }): () => void
+/** A ~60 Hz timer standing in for the browser's animation frame. */
+export declare function requestAnimationFrame(callback: (time: number) => void): number
+export declare function cancelAnimationFrame(id: number): void

@@ -6,16 +6,11 @@ import { flags, adapterOptions, pixels } from './helpers.mjs'
 test('Three.js WebGPURenderer draws a real mesh and readback proves pixels', async () => {
   const app = await createWebGPUContext(64, 64, { flags: flags(), adapterOptions: adapterOptions() })
   const restore = installGlobals({ gpu: app.gpu })
-  const previousSelf = globalThis.self
   const previousVideoFrame = globalThis.VideoFrame
   // Three r180 probes instanceof VideoFrame even for ordinary render targets.
   // No video is used in this test; this host explicitly rejects construction.
   globalThis.VideoFrame ??= class VideoFrame {
     constructor() { throw new DOMException('This host does not implement WebCodecs', 'NotSupportedError') }
-  }
-  globalThis.self = {
-    requestAnimationFrame: callback => setTimeout(() => callback(performance.now()), 16).unref(),
-    cancelAnimationFrame: clearTimeout,
   }
   let renderer, geometry, material
   try {
@@ -43,8 +38,6 @@ test('Three.js WebGPURenderer draws a real mesh and readback proves pixels', asy
   } finally {
     geometry?.dispose(); material?.dispose(); renderer?.dispose()
     app.destroy(); restore()
-    if (previousSelf === undefined) delete globalThis.self
-    else globalThis.self = previousSelf
     if (previousVideoFrame === undefined) delete globalThis.VideoFrame
     else globalThis.VideoFrame = previousVideoFrame
   }

@@ -82,7 +82,7 @@ device.destroy()
 restore()
 ```
 
-Importing the package does not mutate globals. `installGlobals({ gpu, target? })` installs WebGPU constructors/constants and `navigator.gpu`, preserving the existing navigator. Its returned function restores previous property descriptors. Constants and constructors are also named exports; `globals` contains all Dawn exports plus this package's `GPUCanvasContext`. `create` is an alias for `createGPU`.
+Importing the package does not mutate globals. `installGlobals({ gpu, target?, animationFrame? })` installs WebGPU constructors/constants and `navigator.gpu`, preserving the existing navigator. It also adds `requestAnimationFrame`, `cancelAnimationFrame` and `self` where the target lacks them, which browser code such as Three.js expects; pass `animationFrame: false` to skip those. Node has no compositor, so an animation frame is a ~60 Hz timer that passes the frame time. Both functions are also named exports. Its returned function restores previous property descriptors. Constants and constructors are also named exports; `globals` contains all Dawn exports plus this package's `GPUCanvasContext`. `create` is an alias for `createGPU`.
 
 `GPUCanvasContext` supports `configure`, `getConfiguration`, `unconfigure`, and `getCurrentTexture`, plus explicit `present`, `resize`, `attachWindow`, `detachWindow`, and `destroy`. Repeated texture acquisition within a frame returns the same texture. Presentation, resizing, and unconfiguration expire it. Use one context per canvas. There is no browser compositor in Node, so the host must call `present()` after submitting the frame.
 
@@ -116,7 +116,7 @@ npm run example:triangle  # Saves an offscreen triangle as triangle.ppm
 npm run example:window    # Animated native window
 ```
 
-Tested with Three.js 0.180.0's `WebGPURenderer`, including pixel readback. Supply the canvas and device to the renderer, install WebGPU globals, and provide `self.requestAnimationFrame` / `cancelAnimationFrame`. Three r180 also checks for `VideoFrame` during rendering, so the test supplies a stub that throws if constructed. See [test/three.test.mjs](test/three.test.mjs) for the setup. Other Three.js versions and features have not been tested.
+Tested with Three.js 0.180.0's `WebGPURenderer`, including pixel readback. Supply the canvas and device to the renderer and install the globals; `installGlobals` provides the `self.requestAnimationFrame` Three.js uses. Three r180 also checks for `VideoFrame` during rendering, so the test supplies a stub that throws if constructed. See [test/three.test.mjs](test/three.test.mjs) for the setup. Other Three.js versions and features have not been tested.
 
 Dawn provides the GPU API. Its Node bindings do not implement `copyExternalImageToTexture` or external video textures; upload decoded pixels with `queue.writeTexture`. Canvas color management supports sRGB with standard tone mapping. This package has not passed the full WebGPU conformance suite.
 

@@ -20,8 +20,25 @@ export function createGPU(flags = []) {
 }
 export const create = createGPU
 
+// Node has no compositor, so an animation frame is a ~60 Hz timer that passes
+// the frame time, like the browser's. Frames run only while one is requested.
+const frames = new Map()
+let nextFrame = 1
+export function requestAnimationFrame(callback) {
+  if (typeof callback !== 'function') throw new TypeError('requestAnimationFrame needs a function')
+  const id = nextFrame++
+  frames.set(id, setTimeout(() => { frames.delete(id); callback(performance.now()) }, 16))
+  return id
+}
+export function cancelAnimationFrame(id) {
+  clearTimeout(frames.get(id))
+  frames.delete(id)
+}
+
 // Installation is explicit; importing the package never changes globalThis.
-export function installGlobals({ gpu = createGPU(), target = globalThis } = {}) {
+// Browser code such as Three.js also expects requestAnimationFrame and `self`;
+// those are added only where the target does not already have them.
+export function installGlobals({ gpu = createGPU(), target = globalThis, animationFrame = true } = {}) {
   const restore = []
   function set(object, name, value) {
     const previous = Object.getOwnPropertyDescriptor(object, name)
@@ -36,6 +53,11 @@ export function installGlobals({ gpu = createGPU(), target = globalThis } = {}) 
     for (const [name, value] of Object.entries(globals)) set(target, name, value)
     if (!target.navigator) set(target, 'navigator', {})
     set(target.navigator, 'gpu', gpu)
+    if (animationFrame) {
+      if (typeof target.requestAnimationFrame !== 'function') set(target, 'requestAnimationFrame', requestAnimationFrame)
+      if (typeof target.cancelAnimationFrame !== 'function') set(target, 'cancelAnimationFrame', cancelAnimationFrame)
+      if (target.self === undefined) set(target, 'self', target)
+    }
   } catch (error) { for (const undo of restore.reverse()) undo(); throw error }
   let installed = true
   return () => { if (installed) { installed = false; for (const undo of restore.reverse()) undo() } }
