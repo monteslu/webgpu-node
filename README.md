@@ -60,7 +60,7 @@ try {
 
 Options include `gpu`, `device`, `flags`, `adapterOptions`, `deviceDescriptor`, `window`, `presentMode`, `videoDriver`, `format`, `usage`, and `alphaMode`. The default canvas usage is `RENDER_ATTACHMENT | COPY_SRC`, allowing readback. Dawn flags use `key=value` strings, e.g. `flags: ['backend=vulkan']`.
 
-Keep the returned app (or your manually created `gpu`) alive while using its adapters/devices. Destroy owned devices when finished. GPU work and references can otherwise keep Node alive.
+Devices stay valid even if the `gpu` object is garbage collected. Call `destroy()` (or `device.destroy()`) when finished to release GPU memory promptly. Only pending asynchronous GPU work keeps Node running; an idle device does not.
 
 ## Standard API and globals
 
