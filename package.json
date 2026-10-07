@@ -1,6 +1,6 @@
 {
   "name": "webgpu-node",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "WebGPU for Node.js: navigator.gpu, a canvas and GPUCanvasContext, and SDL windows, on native-dawn",
   "type": "module",
   "main": "index.mjs",
